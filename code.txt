@@ -178,4 +178,51 @@ void loop() {
   delay(100);  
 }
 
+//updated water pump
+
+const int trigPin = 4;  // Trigger pin connected to pin 4
+const int echoPin = 5;  // Echo pin connected to pin 5
+const int relayPin = 8; // Relay control pin connected to pin 8
+
+void setup() {
+  Serial.begin(9600);  // Initialize serial communication at 9600 baud rate
+  pinMode(trigPin, OUTPUT);  // Set trigPin as output
+  pinMode(echoPin, INPUT);   // Set echoPin as input
+  pinMode(relayPin, OUTPUT); // Set relayPin as output
+  
+  digitalWrite(relayPin, LOW); // Ensure relay is off at the start
+}
+
+void loop() {
+  // Send a 10-microsecond pulse to trigger the sonar
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // Read the echo time
+  long duration = pulseIn(echoPin, HIGH);
+
+  // Calculate the distance in centimeters
+  float distance = (duration * 0.0343) / 2;
+
+  // Print the distance to the Serial Monitor for debugging
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Logic: If the distance is less than 10 cm, turn off the relay (motor stops)
+  if(distance > 8) {
+    digitalWrite(relayPin, LOW);  // Deactivate relay
+    Serial.println("Relay Deactivated (Motor On)"); // Debug message
+
+  } else if (distance < 3){
+    digitalWrite(relayPin, HIGH);  // Activate relay
+    Serial.println("Relay Activated (Motor Off)"); // Debug message
+  }
+
+  // Add a short delay before the next measurement
+  delay(500);  
+}
 
