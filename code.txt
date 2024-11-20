@@ -225,4 +225,43 @@ void loop() {
   // Add a short delay before the next measurement
   delay(500);  
 }
+//--------------ldr-------------------///
+const int ldrPin = A2;    // LDR connected to A2
+const int ledPin = 9;     // LED connected to D9
 
+// Threshold for turning the LED on/off
+const int darkThreshold = 10;     // Threshold for darkness
+const int brightThreshold = 50;  // Threshold for brightness
+
+bool isLedOn = false;  // Track LED state
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(250000);
+}
+
+void loop() {
+  int ldrValue = analogRead(ldrPin);
+
+  Serial.print("LDR Value: ");
+  Serial.println(ldrValue);
+
+  // Logic to turn on LED when dark and keep it on
+  if (ldrValue < darkThreshold) {
+    if (!isLedOn) {
+      digitalWrite(ledPin, HIGH);
+      isLedOn = true;
+      Serial.println("LED turned ON");
+    }
+  } 
+  // Only turn off LED when it becomes very bright
+  else if (ldrValue > brightThreshold) {
+    if (isLedOn) {
+      digitalWrite(ledPin, LOW);
+      isLedOn = false;
+      Serial.println("LED turned OFF");
+    }
+  }
+
+  delay(500);  // Small delay for stability
+}
