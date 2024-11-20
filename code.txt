@@ -95,3 +95,37 @@ void loop() {
         }
    }
 }
+
+////////soil test-----------------------------------------------------
+const int sensor_pin = A0;  // Declare sensor_pin as a constant globally
+
+void setup()
+{
+  Serial.begin(9600);  // Initialize serial communication
+  pinMode(sensor_pin, INPUT);  // Set sensor_pin as input
+}
+
+void loop()
+{
+  int sensor_data = analogRead(sensor_pin);  // Read sensor data
+  Serial.print("Sensor_data: ");
+  Serial.print(sensor_data);
+  Serial.print("\t | ");
+  
+  // Determine soil moisture level
+  if (sensor_data > 800)
+  {
+    Serial.println("No moisture, Soil is dry");
+  }
+  else if (sensor_data >= 600 && sensor_data <= 800)
+  {
+    Serial.println("Soil is moderately moist");
+  }
+  else
+  {
+    Serial.println("Soil is wet");
+  }
+
+  delay(100);  // Delay for 100 milliseconds
+}
+
