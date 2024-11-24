@@ -1,267 +1,170 @@
-//fire detection 
-int mq4Pin = A0;
-int sensorValue = 0;
-int flame_sensor_pin = 4;
-int buzzer_pin = 9;
-int flame_pin = HIGH;
+// Pin Assignments
+const int mq4Pin = A0;              // MQ4 Gas Sensor (Analog)
+const int flame_sensor_pin = 4;     // Flame Sensor (Digital)
+const int buzzer_pin = 9;           // Buzzer
+const int pirPin = 6;               // PIR Motion Sensor
+const int ledPin = 7;               // LED for PIR
+const int soilSensorPin = A1;       // Soil Moisture Sensor (Analog)
+const int trigPin = 5;              // Ultrasonic Sensor Trigger Pin
+const int echoPin = 3;              // Ultrasonic Sensor Echo Pin
+const int relayPin = 8;             // Relay for Water Pump
+const int ldrPin = A2;              // LDR Sensor (Analog)
+const int ldrLedPin = 10;           // LED for LDR
 
+// Constants for LDR
+const int darkThreshold = 10;
+const int brightThreshold = 50;
+bool isLedOn = false;
 
+// PIR Motion Sensor Variables
+long unsigned int lastMotionTime;
+const long unsigned int motionLedOnTime = 6000;  // Keep LED on for 6 seconds
+boolean lockLow = true;
+boolean takeLowTime;
+
+// Setup Function
 void setup() {
+  // General Setup
+  Serial.begin(9600);
+
+  // Flame and Gas Sensor Setup
   pinMode(flame_sensor_pin, INPUT);
   pinMode(buzzer_pin, OUTPUT);
-  Serial.begin(9600);
+
+  // PIR Motion Sensor Setup
+  pinMode(pirPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(pirPin, LOW);
+
+  // Soil Moisture Sensor Setup
+  pinMode(soilSensorPin, INPUT);
+
+  // Ultrasonic Water Pump Setup
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, LOW);
+
+  // LDR Sensor Setup
+  pinMode(ldrLedPin, OUTPUT);
 }
 
+// Main Loop
 void loop() {
-  sensorValue = analogRead(mq4Pin);
-  flame_pin = digitalRead(flame_sensor_pin);
-   if (flame_pin == LOW || sensorValue>700)                              
-  {
-    Serial.println("FLAME, FLAME, FLAME");    
+  // ---------------------- Flame and Gas Sensor ----------------------
+  int sensorValue = analogRead(mq4Pin);
+  int flame_pin = digitalRead(flame_sensor_pin);
+
+  if (flame_pin == LOW || sensorValue > 700) {
+    Serial.println("FLAME or GAS Detected!");
     digitalWrite(buzzer_pin, HIGH);
-  }
-  else {
-    Serial.println("no flame");                                            
+  } else {
     digitalWrite(buzzer_pin, LOW);
   }
-  
   Serial.print("MQ4 Sensor Value: ");
   Serial.println(sensorValue);
-  
 
-  delay(500);
-}
-//-----------------------------------------------//
-pir motion
-
-//////////////////////////
-int calibrationTime = 30;          
-long unsigned int lowIn;           
-long unsigned int pause = 10000;  
-boolean lockLow = true; 
-boolean takeLowTime;    
-int pirPin = 6;    
-int ledPin = 7;   
-long unsigned int motionLedOnTime = 6000; // 1 minute (60000 ms)
-long unsigned int lastMotionTime;          // Time when the motion was last detected
-
-void setup() {
-   Serial.begin(9600);
-   pinMode(pirPin, INPUT);
-   pinMode(ledPin, OUTPUT);
-   digitalWrite(pirPin, LOW);
-   
-   Serial.print("calibrating sensor ");     
-   for(int i = 0; i < calibrationTime; i++) {
-       Serial.print(".");
-       delay(500);
-   }
-   Serial.println(" done");
-   Serial.println("SENSOR ACTIVE");
-   delay(50);
-}
-
-void loop() {
-   if(digitalRead(pirPin) == HIGH) {
-        digitalWrite(ledPin, HIGH);   
-        lastMotionTime = millis();   // Update the time when motion was detected
-        if(lockLow) {
-          lockLow = false;                      
-          Serial.println("---");
-          Serial.print("motion detected at ");
-          Serial.print(millis()/1000);
-          Serial.println(" sec");
-          delay(50); 
-        }                   
-        takeLowTime = true;
-   }
-   
-   if(digitalRead(pirPin) == LOW) {
-        if (millis() - lastMotionTime > motionLedOnTime) { // Check if 1 minute has passed since last motion
-            digitalWrite(ledPin, LOW);
-        }
-        
-        if(takeLowTime) {
-            lowIn = millis();
-            takeLowTime = false;
-        }
-        
-        if(!lockLow && millis() - lowIn > pause) {
-            lockLow = true;                                    
-            Serial.print("motion ended at ");
-            Serial.print((millis() - pause)/100);
-            Serial.println(" sec");
-            delay(50);
-        }
-   }
-}
-
-////////soil test-----------------------------------------------------
-const int sensor_pin = A0;  // Declare sensor_pin as a constant globally
-
-void setup()
-{
-  Serial.begin(9600);  // Initialize serial communication
-  pinMode(sensor_pin, INPUT);  // Set sensor_pin as input
-}
-
-void loop()
-{
-  int sensor_data = analogRead(sensor_pin);  // Read sensor data
-  Serial.print("Sensor_data: ");
-  Serial.print(sensor_data);
-  Serial.print("\t | ");
-  
-  // Determine soil moisture level
-  if (sensor_data > 800)
-  {
-    Serial.println("No moisture, Soil is dry");
-  }
-  else if (sensor_data >= 600 && sensor_data <= 800)
-  {
-    Serial.println("Soil is moderately moist");
-  }
-  else
-  {
-    Serial.println("Soil is wet");
-  }
-
-  delay(100);  // Delay for 100 milliseconds
-}
-//-----------------------------------water pmp------------//
-const int trigPin = 4;  // Trigger pin connected to pin 4
-const int echoPin = 5;  // Echo pin connected to pin 5
-const int relayPin = 8; // Relay control pin connected to pin 8
-
-void setup() {
-  Serial.begin(9600);  // Initialize serial communication at 9600 baud rate
-  pinMode(trigPin, OUTPUT);  // Set trigPin as output
-  pinMode(echoPin, INPUT);   // Set echoPin as input
-  pinMode(relayPin, OUTPUT); // Set relayPin as output
-  
-  digitalWrite(relayPin, LOW); // Ensure relay is off at the start
-}
-
-void loop() {
-  // Send a 10-microsecond pulse to trigger the sonar
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-
-  // Read the echo time
-  long duration = pulseIn(echoPin, HIGH);
-
-  // Calculate the distance in centimeters
-  float distance = (duration * 0.0343) / 2;
-
-  // Print the distance to the Serial Monitor for debugging
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-
-  // Logic: If the distance is less than 10 cm, turn off the relay (motor stops)
-  if(distance < 6) {
-    digitalWrite(relayPin, HIGH);  // Deactivate relay
-    Serial.println("Relay activated (Motor OFF)"); // Debug message
-    if(distance<3){
-      digitalWrite(relayPin, LOW);
-      Serial.println("motor off, successfully filled with water");
+  // ---------------------- PIR Motion Sensor ----------------------
+  if (digitalRead(pirPin) == HIGH) {
+    digitalWrite(ledPin, HIGH);
+    lastMotionTime = millis();
+    if (lockLow) {
+      lockLow = false;
+      Serial.print("Motion detected at: ");
+      Serial.println(millis() / 1000);
     }
-  } else {
-    digitalWrite(relayPin, LOW);  // Activate relay
-    Serial.println("Relay Deactivated (Motor ON)"); // Debug message
+    takeLowTime = true;
   }
 
-  // Add a short delay before the next measurement
-  delay(100);  
-}
+  if (digitalRead(pirPin) == LOW) {
+    if (millis() - lastMotionTime > motionLedOnTime) {
+      digitalWrite(ledPin, LOW);
+    }
+    if (takeLowTime) {
+      takeLowTime = false;
+    }
+    if (!lockLow && millis() - lastMotionTime > 10000) {
+      lockLow = true;
+      Serial.println("Motion ended");
+    }
+  }
 
-//updated water pump
+  // ---------------------- Soil Moisture Sensor ----------------------
+  int soilMoisture = analogRead(soilSensorPin);
+  Serial.print("Soil Moisture: ");
+  Serial.print(soilMoisture);
+  if (soilMoisture > 800) {
+    Serial.println(" - Dry");
+  } else if (soilMoisture >= 600 && soilMoisture <= 800) {
+    Serial.println(" - Moderately Moist");
+  } else {
+    Serial.println(" - Wet");
+  }
 
-const int trigPin = 4;  // Trigger pin connected to pin 4
-const int echoPin = 5;  // Echo pin connected to pin 5
-const int relayPin = 8; // Relay control pin connected to pin 8
-
-void setup() {
-  Serial.begin(9600);  // Initialize serial communication at 9600 baud rate
-  pinMode(trigPin, OUTPUT);  // Set trigPin as output
-  pinMode(echoPin, INPUT);   // Set echoPin as input
-  pinMode(relayPin, OUTPUT); // Set relayPin as output
-  
-  digitalWrite(relayPin, LOW); // Ensure relay is off at the start
-}
-
-void loop() {
-  // Send a 10-microsecond pulse to trigger the sonar
+  // ---------------------- Ultrasonic Water Pump ----------------------
   digitalWrite(trigPin, LOW);
   delayMicroseconds(2);
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-
-  // Read the echo time
   long duration = pulseIn(echoPin, HIGH);
-
-  // Calculate the distance in centimeters
   float distance = (duration * 0.0343) / 2;
 
-  // Print the distance to the Serial Monitor for debugging
-  Serial.print("Distance: ");
+  Serial.print("Water Distance: ");
   Serial.print(distance);
   Serial.println(" cm");
 
-  // Logic: If the distance is less than 10 cm, turn off the relay (motor stops)
-  if(distance > 8) {
-    digitalWrite(relayPin, LOW);  // Deactivate relay
-    Serial.println("Relay Deactivated (Motor On)"); // Debug message
-
-  } else if (distance < 3){
-    digitalWrite(relayPin, HIGH);  // Activate relay
-    Serial.println("Relay Activated (Motor Off)"); // Debug message
+  if (distance > 8) {
+    digitalWrite(relayPin, LOW);  // Motor On
+    Serial.println("Relay Deactivated (Motor On)");
+  } else if (distance < 3) {
+    digitalWrite(relayPin, HIGH); // Motor Off
+    Serial.println("Relay Activated (Motor Off)");
   }
 
-  // Add a short delay before the next measurement
-  delay(500);  
-}
-//--------------ldr-------------------///
-const int ldrPin = A2;    // LDR connected to A2
-const int ledPin = 9;     // LED connected to D9
-
-// Threshold for turning the LED on/off
-const int darkThreshold = 10;     // Threshold for darkness
-const int brightThreshold = 50;  // Threshold for brightness
-
-bool isLedOn = false;  // Track LED state
-
-void setup() {
-  pinMode(ledPin, OUTPUT);
-  Serial.begin(250000);
-}
-
-void loop() {
+  // ---------------------- LDR Sensor ----------------------
   int ldrValue = analogRead(ldrPin);
-
   Serial.print("LDR Value: ");
   Serial.println(ldrValue);
 
-  // Logic to turn on LED when dark and keep it on
-  if (ldrValue < darkThreshold) {
-    if (!isLedOn) {
-      digitalWrite(ledPin, HIGH);
-      isLedOn = true;
-      Serial.println("LED turned ON");
-    }
-  } 
-  // Only turn off LED when it becomes very bright
-  else if (ldrValue > brightThreshold) {
-    if (isLedOn) {
-      digitalWrite(ledPin, LOW);
-      isLedOn = false;
-      Serial.println("LED turned OFF");
-    }
+  if (ldrValue < darkThreshold && !isLedOn) {
+    digitalWrite(ldrLedPin, HIGH);
+    isLedOn = true;
+    Serial.println("LDR LED turned ON");
+  } else if (ldrValue > brightThreshold && isLedOn) {
+    digitalWrite(ldrLedPin, LOW);
+    isLedOn = false;
+    Serial.println("LDR LED turned OFF");
   }
 
-  delay(500);  // Small delay for stability
+  // Delay for stability
+  delay(500);
+}
+
+//bluetooth control
+// Pin Definitions
+const int Blue = 9;  
+
+void setup(){
+  Serial.begin(9600);
+  pinMode(Blue , OUTPUT);
+  digitalWrite(Blue, LOW);
+}
+
+char terminalRead;
+
+void loop(){
+  if(Serial.available()>0){
+    terminalRead = Serial.read();
+    delay(2);
+
+    if(terminalRead=='1'){
+      digitalWrite(Blue, HIGH);
+      Serial.print('Blue light on');
+    }
+    if(terminalRead=='a'){
+      digitalWrite(Blue, LOW);
+      Serial.print('Blue light off');
+    }
+  }
 }
