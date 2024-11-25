@@ -1,3 +1,4 @@
+//uno 1
 // Pin Assignments
 const int mq4Pin = A0;              // MQ4 Gas Sensor (Analog)
 const int flame_sensor_pin = 4;     // Flame Sensor (Digital)
@@ -9,178 +10,12 @@ const int trigPin = 5;              // Ultrasonic Sensor Trigger Pin
 const int echoPin = 3;              // Ultrasonic Sensor Echo Pin
 const int relayPin = 8;             // Relay for Water Pump
 const int ldrPin = A2;              // LDR Sensor (Analog)
-const int ldrLedPin = 10;           // LED for LDR
+const int ldrLedPin = 2;            // LED for LDR
+const int soilMoistureWetLed = 11;  // LED for wet soil
+const int soilMoistureDryLed = 10;  // LED for dry soil
 
-// Constants for LDR
-const int darkThreshold = 10;
-const int brightThreshold = 50;
-bool isLedOn = false;
-
-// PIR Motion Sensor Variables
-long unsigned int lastMotionTime;
-const long unsigned int motionLedOnTime = 6000;  // Keep LED on for 6 seconds
-boolean lockLow = true;
-boolean takeLowTime;
-
-// Setup Function
-void setup() {
-  // General Setup
-  Serial.begin(9600);
-
-  // Flame and Gas Sensor Setup
-  pinMode(flame_sensor_pin, INPUT);
-  pinMode(buzzer_pin, OUTPUT);
-
-  // PIR Motion Sensor Setup
-  pinMode(pirPin, INPUT);
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(pirPin, LOW);
-
-  // Soil Moisture Sensor Setup
-  pinMode(soilSensorPin, INPUT);
-
-  // Ultrasonic Water Pump Setup
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, LOW);
-
-  // LDR Sensor Setup
-  pinMode(ldrLedPin, OUTPUT);
-}
-
-// Main Loop
-void loop() {
-  // ---------------------- Flame and Gas Sensor ----------------------
-  int sensorValue = analogRead(mq4Pin);
-  int flame_pin = digitalRead(flame_sensor_pin);
-
-  if (flame_pin == LOW || sensorValue > 700) {
-    Serial.println("FLAME or GAS Detected!");
-    digitalWrite(buzzer_pin, HIGH);
-  } else {
-    digitalWrite(buzzer_pin, LOW);
-  }
-  Serial.print("MQ4 Sensor Value: ");
-  Serial.println(sensorValue);
-
-  // ---------------------- PIR Motion Sensor ----------------------
-  if (digitalRead(pirPin) == HIGH) {
-    digitalWrite(ledPin, HIGH);
-    lastMotionTime = millis();
-    if (lockLow) {
-      lockLow = false;
-      Serial.print("Motion detected at: ");
-      Serial.println(millis() / 1000);
-    }
-    takeLowTime = true;
-  }
-
-  if (digitalRead(pirPin) == LOW) {
-    if (millis() - lastMotionTime > motionLedOnTime) {
-      digitalWrite(ledPin, LOW);
-    }
-    if (takeLowTime) {
-      takeLowTime = false;
-    }
-    if (!lockLow && millis() - lastMotionTime > 10000) {
-      lockLow = true;
-      Serial.println("Motion ended");
-    }
-  }
-
-  // ---------------------- Soil Moisture Sensor ----------------------
-  int soilMoisture = analogRead(soilSensorPin);
-  Serial.print("Soil Moisture: ");
-  Serial.print(soilMoisture);
-  if (soilMoisture > 800) {
-    Serial.println(" - Dry");
-  } else if (soilMoisture >= 600 && soilMoisture <= 800) {
-    Serial.println(" - Moderately Moist");
-  } else {
-    Serial.println(" - Wet");
-  }
-
-  // ---------------------- Ultrasonic Water Pump ----------------------
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-  long duration = pulseIn(echoPin, HIGH);
-  float distance = (duration * 0.0343) / 2;
-
-  Serial.print("Water Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-
-  if (distance > 8) {
-    digitalWrite(relayPin, LOW);  // Motor On
-    Serial.println("Relay Deactivated (Motor On)");
-  } else if (distance < 3) {
-    digitalWrite(relayPin, HIGH); // Motor Off
-    Serial.println("Relay Activated (Motor Off)");
-  }
-
-  // ---------------------- LDR Sensor ----------------------
-  int ldrValue = analogRead(ldrPin);
-  Serial.print("LDR Value: ");
-  Serial.println(ldrValue);
-
-  if (ldrValue < darkThreshold && !isLedOn) {
-    digitalWrite(ldrLedPin, HIGH);
-    isLedOn = true;
-    Serial.println("LDR LED turned ON");
-  } else if (ldrValue > brightThreshold && isLedOn) {
-    digitalWrite(ldrLedPin, LOW);
-    isLedOn = false;
-    Serial.println("LDR LED turned OFF");
-  }
-
-  // Delay for stability
-  delay(500);
-}
-
-//bluetooth control
-// Pin Definitions
-const int Blue = 9;  
-
-void setup(){
-  Serial.begin(9600);
-  pinMode(Blue , OUTPUT);
-  digitalWrite(Blue, LOW);
-}
-
-char terminalRead;
-
-void loop(){
-  if(Serial.available()>0){
-    terminalRead = Serial.read();
-    delay(2);
-
-    if(terminalRead=='1'){
-      digitalWrite(Blue, HIGH);
-      Serial.print('Blue light on');
-    }
-    if(terminalRead=='a'){
-      digitalWrite(Blue, LOW);
-      Serial.print('Blue light off');
-    }
-  }
-}
-//meerrge 
-// Pin Assignments
-const int mq4Pin = A0;              // MQ4 Gas Sensor (Analog)
-const int flame_sensor_pin = 4;     // Flame Sensor (Digital)
-const int buzzer_pin = 9;           // Buzzer
-const int pirPin = 6;               // PIR Motion Sensor
-const int ledPin = 7;               // LED for PIR
-const int soilSensorPin = A1;       // Soil Moisture Sensor (Analog)
-const int trigPin = 5;              // Ultrasonic Sensor Trigger Pin
-const int echoPin = 3;              // Ultrasonic Sensor Echo Pin
-const int relayPin = 8;             // Relay for Water Pump
-const int ldrPin = A2;              // LDR Sensor (Analog)
-const int ldrLedPin = 10;           // LED for LDR
+// Bluetooth Module Variables
+char terminalRead;                  // For Bluetooth data
 
 // Constants for LDR
 const int darkThreshold = 15;
@@ -209,6 +44,8 @@ void setup() {
 
   // Soil Moisture Sensor Setup
   pinMode(soilSensorPin, INPUT);
+  pinMode(soilMoistureWetLed, OUTPUT);
+  pinMode(soilMoistureDryLed, OUTPUT);
 
   // Ultrasonic Water Pump Setup
   pinMode(trigPin, OUTPUT);
@@ -222,6 +59,26 @@ void setup() {
 
 // Main Loop
 void loop() {
+  // Bluetooth Control for LDR and PIR LEDs
+  if (Serial.available() > 0) {
+    terminalRead = Serial.read();
+    delay(2);
+
+    if (terminalRead == '1') {
+      digitalWrite(ldrLedPin, HIGH); // Turn on LDR LED
+      Serial.println("LDR LED turned ON");
+    } else if (terminalRead == '2') {
+      digitalWrite(ldrLedPin, LOW); // Turn off LDR LED
+      Serial.println("LDR LED turned OFF");
+    } else if (terminalRead == '3') {
+      digitalWrite(ledPin, HIGH); // Turn on PIR LED
+      Serial.println("PIR LED turned ON");
+    } else if (terminalRead == '4') {
+      digitalWrite(ledPin, LOW); // Turn off PIR LED
+      Serial.println("PIR LED turned OFF");
+    }
+  }
+
   // ---------------------- Flame and Gas Sensor ----------------------
   int sensorValue = analogRead(mq4Pin);
   int flame_pin = digitalRead(flame_sensor_pin);
@@ -254,7 +111,7 @@ void loop() {
     if (takeLowTime) {
       takeLowTime = false;
     }
-    if (!lockLow && millis() - lastMotionTime > 10000) {
+    if (!lockLow && millis() - lastMotionTime > 850) {
       lockLow = true;
       Serial.println("Motion ended");
     }
@@ -264,12 +121,14 @@ void loop() {
   int soilMoisture = analogRead(soilSensorPin);
   Serial.print("Soil Moisture: ");
   Serial.print(soilMoisture);
-  if (soilMoisture > 800) {
+  if (soilMoisture > 900) {
     Serial.println(" - Dry");
-  } else if (soilMoisture >= 600 && soilMoisture <= 800) {
-    Serial.println(" - Moderately Moist");
+    digitalWrite(soilMoistureWetLed, LOW);
+    digitalWrite(soilMoistureDryLed, HIGH);
   } else {
     Serial.println(" - Wet");
+    digitalWrite(soilMoistureWetLed, HIGH);
+    digitalWrite(soilMoistureDryLed, LOW);
   }
 
   // ---------------------- Ultrasonic Water Pump ----------------------
